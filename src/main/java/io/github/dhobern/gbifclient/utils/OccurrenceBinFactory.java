@@ -11,7 +11,7 @@ package io.github.dhobern.gbifclient.utils;
   */
 public class OccurrenceBinFactory extends CellValueFactory {
     
-    public CellValue createCellValue(int[] position, Mappable m) {
+    public OccurrenceBin createCellValue(int[] position, Mappable m) {
         return new OccurrenceBin(position, m);
     }
 

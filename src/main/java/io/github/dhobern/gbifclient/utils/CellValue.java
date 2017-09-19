@@ -35,5 +35,7 @@ public abstract class CellValue {
     
     public abstract int[] getCounts();
     
-    public abstract String[] getItems();
+    public abstract String[] getItemLabels(int format, int maxCellSize);
+    
+    public abstract String[] getItems(int format);
 }

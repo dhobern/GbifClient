@@ -49,6 +49,9 @@ public class GbifClient {
                     OccurrenceMatrix<OccurrenceBin,Occurrence> binMatrix = extractOccurrenceBins(entity.getContent());
                     
                     OccurrenceMatrix<GridCell,OccurrenceBin> gridMatrix = gridOccurrenceBins(binMatrix);
+
+                    gridMatrix.exportGrid("GridExport-Ranked-" + scientificName.replace(" ", "_") + ".txt", OccurrenceMatrix.FORMAT_RANKORDER);
+                    gridMatrix.exportGrid("GridExport-Occupancy-" + scientificName.replace(" ", "_") + ".txt", OccurrenceMatrix.FORMAT_OCCUPANCY);
                 }
             }
         } catch (IOException ex) {
@@ -112,8 +115,6 @@ public class GbifClient {
             OccurrenceBin bin = iterator.next();
             gridMatrix.insert(bin);
         }
-        
-        gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + ".txt");
         
         return gridMatrix;
     }

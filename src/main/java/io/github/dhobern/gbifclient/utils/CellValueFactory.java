@@ -9,8 +9,8 @@ package io.github.dhobern.gbifclient.utils;
  *
  * @author Platyptilia
  */
-public abstract class CellValueFactory {
+public abstract class CellValueFactory<T extends CellValue> {
     
-    public abstract CellValue createCellValue(int[] position, Mappable m);
+    public abstract T createCellValue(int[] position, Mappable m);
 
 }

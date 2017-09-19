@@ -14,6 +14,7 @@ import java.time.LocalDate;
 public class OccurrenceBin extends CellValue implements Mappable, Comparable {
 
     private static final String[] countLabels = new String[] { "occurrencecount" };
+    private static final String[] itemLabels = new String[] { Occurrence.SPECIESKEY, Occurrence.SCIENTIFICNAME };
     
     private String speciesKey;
     private String scientificName;
@@ -105,9 +106,10 @@ public class OccurrenceBin extends CellValue implements Mappable, Comparable {
         return counts;
     }
     
-    public String[] getItems() {
-        String[] items = new String[1];
-        items[0] = scientificName;
+    public String[] getItems(int format) {
+        String[] items = new String[2];
+        items[0] = speciesKey;
+        items[1] = scientificName;
         return items;
     }
 
@@ -123,4 +125,8 @@ public class OccurrenceBin extends CellValue implements Mappable, Comparable {
         return comparison;
     }
 
+    @Override
+    public String[] getItemLabels(int format, int maxCellSize) {
+        return itemLabels;
+    }
 }

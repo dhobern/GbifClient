@@ -11,7 +11,7 @@ package io.github.dhobern.gbifclient.utils;
   */
 public class GridCellFactory extends CellValueFactory {
     
-    public CellValue createCellValue(int[] position, Mappable m) {
+    public GridCell createCellValue(int[] position, Mappable m) {
         return new GridCell(position, m);
     }
 

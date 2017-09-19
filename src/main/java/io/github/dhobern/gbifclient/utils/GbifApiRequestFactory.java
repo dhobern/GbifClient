@@ -259,7 +259,8 @@ public class GbifApiRequestFactory {
                              && predicate.getString("value").equals(value)
                              && timestamp.isAfter(threshold)
                              && (    status.equals("SUCCEEDED")
-                                  || status.equals("PREPARING"))) {
+                                  || status.equals("PREPARING")
+                                  || status.equals("RUNNING"))) {
                             downloadKey = d.getString("key");
                         }
                     }                   

@@ -16,7 +16,7 @@ public class MatrixDimensions {
     private ArrayList<CategorySelector> selectors;
     private ArrayList<String> indexFormats;
     int selectorCount = 0;
-    boolean abstractMatrix = false;
+    boolean unboundedMatrix = false;
     
     public MatrixDimensions() {
         selectors = new ArrayList<CategorySelector>();
@@ -36,7 +36,7 @@ public class MatrixDimensions {
         selectorCount++;
         
         if (s.getCategoryCount() < 0) {
-            abstractMatrix = true;
+            unboundedMatrix = true;
         }
 
         return this;
@@ -70,8 +70,8 @@ public class MatrixDimensions {
         return key;
     }
     
-    public boolean isAbstractMatrix() {
-        return abstractMatrix;
+    public boolean isUnboundedMatrix() {
+        return unboundedMatrix;
     }
     
     public ArrayList<CategorySelector> getSelectors() {

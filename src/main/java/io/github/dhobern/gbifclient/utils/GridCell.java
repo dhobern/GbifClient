@@ -8,6 +8,7 @@ package io.github.dhobern.gbifclient.utils;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  *
@@ -76,10 +77,36 @@ public class GridCell extends CellValue implements Comparable {
         return counts;
     }
     
-    public String[] getItems() {
-        String[] items = new String[species.length];
-        for (int i = 0; i < species.length; i++) {
-            items[i] = species[i].getScientificName() + " [ " + species[i].getBinCount() + " / " + species[i].getOccurrenceCount() + " ]";
+    public String[] getItems(int format) {
+        String[] items;
+        
+        switch(format) {
+            case OccurrenceMatrix.FORMAT_OCCUPANCY:
+                items = new String[allSpecies.size()];
+                Iterator<String> iterator = allSpecies.iterator();
+                for (int i = 0; i < items.length && iterator.hasNext(); i++) {
+                    Species s = null;
+                    String nextSpecies = iterator.next();
+                    for (int j = 0; s == null && j < species.length; j++) {
+                        if (species[j].getScientificName().equals(nextSpecies)) {
+                            s = species[j];
+                        }
+                    }
+                    if (s == null) {
+                        items[i] = "";
+                    } else {
+                        items[i] = new Integer(s.getBinCount()).toString();
+                    }
+                }
+                break;
+                
+            default:
+                items = new String[species.length];
+                for (int i = 0; i < species.length; i++) {
+                    items[i] = species[i].getScientificName() + " [ " + species[i].getBinCount() + " / " + species[i].getOccurrenceCount() + " ]";
+                }
+                break;
+                
         }
         return items;
     }
@@ -96,6 +123,35 @@ public class GridCell extends CellValue implements Comparable {
         }
         
         return comparison;
+    }
+
+    @Override
+    public String[] getItemLabels(int format, int maxCellSize) {
+        String[] labels;
+        
+        switch(format) {
+
+            case OccurrenceMatrix.FORMAT_OCCUPANCY:
+                labels = new String[allSpecies.size()];
+                Iterator<String> iterator = allSpecies.iterator();
+                for (int i = 0; i < labels.length && iterator.hasNext(); i++) {
+                    labels[i] = iterator.next();
+                }
+                break;
+
+             default:
+                labels = new String[maxCellSize];
+                int digits = 0;
+                for (int n = maxCellSize; n > 0; n /= 10) {
+                    digits++;
+                }
+                String formatString = "rank_%0" + digits + "d";
+                for (int i = 0; i < maxCellSize; i++) {
+                    labels[i] = String.format(formatString, i + 1);
+                }
+                break;
+        }
+        return labels;
     }
 
 }
