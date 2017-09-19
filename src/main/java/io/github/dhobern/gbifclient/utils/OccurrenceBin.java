@@ -5,57 +5,122 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
+import java.time.LocalDate;
+
 /**
  *
  * @author Platyptilia
  */
-public class OccurrenceBin {
-    private Double decimalLatitudeCentroid;
-    private Double decimalLongitudeCentroid;
-    private String dateString;
+public class OccurrenceBin extends CellValue implements Mappable, Comparable {
+
+    private static final String[] countLabels = new String[] { "occurrencecount" };
+    
     private String speciesKey;
-    private String canonicalName;
+    private String scientificName;
+    private double decimalLatitude;
+    private double decimalLongitude;
+    private LocalDate date;
     private int count;
     
-    public OccurrenceBin(Double lat, Double lon, String d, String s, String n) {
-        decimalLatitudeCentroid = lat;
-        decimalLongitudeCentroid = lon;
-        dateString = d;
-        speciesKey = s;
-        canonicalName = n;
+    public OccurrenceBin(int[] position, Mappable m) {
+        super(position, m);
+        String species = m.getNamedCategory(Occurrence.SPECIESKEY);
+        String taxon = m.getNamedCategory(Occurrence.TAXONKEY);
+        
+        if (species.length() == 0) {
+            scientificName = m.getNamedCategory(Occurrence.SCIENTIFICNAME);
+            speciesKey = taxon;
+        } else {
+            speciesKey = species;
+            if (species.equals(taxon)) {
+                scientificName = m.getNamedCategory(Occurrence.SCIENTIFICNAME);
+            } else {
+                scientificName = GbifApiRequestFactory.getScientificName(speciesKey);
+            }
+        }
+        
+        decimalLatitude = m.getDecimalLatitude();
+        decimalLongitude = m.getDecimalLongitude();
+        date = m.getDate();
+
         count = 1;
     }
-    
-    public int increment() {
-        return ++count;
-    }
-
-    public void setCanonicalName(String canonicalName) {
-        this.canonicalName = canonicalName;
+   
+    public CellValue add(Mappable m) {
+        ++count;
+        return this;
     }
     
-    public Double getDecimalLatitudeCentroid() {
-        return decimalLatitudeCentroid;
-    }
-
-    public Double getDecimalLongitudeCentroid() {
-        return decimalLongitudeCentroid;
-    }
-
-    public String getDateString() {
-        return dateString;
-    }
-
     public String getSpeciesKey() {
         return speciesKey;
     }
 
-    public String getCanonicalName() {
-        return canonicalName;
+    public String getScientificName() {
+        return scientificName;
     }
 
     public int getCount() {
         return count;
+    }
+
+    @Override
+    public Double getDecimalLatitude() {
+        return decimalLatitude;
+    }
+
+    @Override
+    public Double getDecimalLongitude() {
+        return decimalLongitude;
+    }
+
+    @Override
+    public LocalDate getDate() {
+        return date;
+    }
+
+    @Override
+    public String getNamedCategory(String category) {
+        String value = "";
+        
+        switch (category) {
+            case Occurrence.SCIENTIFICNAME:
+                value = scientificName;
+                break;
+            case Occurrence.SPECIESKEY:
+                value = speciesKey;
+                break;
+        }
+        
+        return value;
+    }
+
+    public String[] getCountLabels() {
+        return countLabels;
+    }
+    
+    public int[] getCounts() {
+        int[] counts = new int[1];
+        counts[0] = count;
+        
+        return counts;
+    }
+    
+    public String[] getItems() {
+        String[] items = new String[1];
+        items[0] = scientificName;
+        return items;
+    }
+
+    public int compareTo(Object o) {
+        int comparison = 0;
+        
+        if (o instanceof OccurrenceBin) {
+            for (int i = 0; comparison == 0 && i < offsets.length; i++) {
+                comparison = this.getCellPosition()[i] - ((OccurrenceBin) o).getCellPosition()[i];
+            }
+        }
+        
+        return comparison;
     }
 
 }

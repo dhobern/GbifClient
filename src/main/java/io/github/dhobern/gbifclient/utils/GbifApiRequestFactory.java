@@ -13,6 +13,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.http.HttpEntity;
@@ -45,6 +46,8 @@ public class GbifApiRequestFactory {
     private static final String LIST_DOWNLOADS_URL_BASE = "https://api.gbif.org/v1/occurrence/download/user/";
     
     private static CredentialsProvider provider;
+    
+    private static HashMap<String,String> cachedNames;
     
     static {
         provider = new BasicCredentialsProvider();
@@ -201,13 +204,21 @@ public class GbifApiRequestFactory {
     }
     
     public static String getScientificName(String taxonKey) {
-        String scientificName = null;
+        if (cachedNames == null) {
+            cachedNames = new HashMap<String,String>();
+        }
         
-        try {
-            JSONObject object = readJsonEntity(executeSpeciesGet(taxonKey));
-            scientificName = object.getString("scientificName");
-        } catch (Exception ex) {
-            Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.SEVERE, null, ex);
+        String scientificName = cachedNames.get(taxonKey);
+        
+        if (scientificName == null || scientificName.length() == 0) {
+            try {
+                JSONObject object = readJsonEntity(executeSpeciesGet(taxonKey));
+                scientificName = object.getString("scientificName");
+
+                cachedNames.put(taxonKey, scientificName);
+            } catch (Exception ex) {
+                Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         
         return scientificName;

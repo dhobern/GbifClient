@@ -34,6 +34,7 @@ public class GbifConfiguration {
     private static final String KEY_CACHEDOWNLOADS = "cachedownloads";
     private static final String KEY_REQUIRECOORDINATES = "requirecoordinates";
     private static final String KEY_REQUIRESPECIES = "requirespecies";
+    private static final String KEY_REQUIREDATE = "requiredate";
     private static final String KEY_COUNTRYFILTER = "countryfilter";
 
     private static final String FORMAT_DWCA = "DWCA";
@@ -117,6 +118,10 @@ public class GbifConfiguration {
         return new Boolean(getProperty(KEY_REQUIRESPECIES, "true"));
     }
 
+    public static Boolean requireDate() {
+        return new Boolean(getProperty(KEY_REQUIREDATE, "true"));
+    }
+
     public static Set<String> getCountryFilter() {
         Set<String> filter = null;
         String s = getProperty(KEY_COUNTRYFILTER);
@@ -130,17 +135,41 @@ public class GbifConfiguration {
         return filter;
     }
 
-    public static OccurrenceBinManager getOccurrenceBinManager() {
-        Float binScale = new Float(getProperty(KEY_BINSCALE, "0.01"));
-        String binPeriod = getProperty(KEY_BINPERIOD, "DAY");
+    /**
+     *
+     * @return
+     */
+    public static OccurrenceMatrix<OccurrenceBin,Occurrence> getOccurrenceBinMatrix() {
+        Double binScale = new Double(getProperty(KEY_BINSCALE, "0.01"));
+        MatrixDimensions dimensions = new MatrixDimensions()
+                .addDimension(new LatitudeSelector(binScale))
+                .addDimension(new LongitudeSelector(binScale))
+                .addDimension(new DateSelector());
         
-        return new OccurrenceBinManager(binScale, binPeriod);
+        return new OccurrenceMatrix<OccurrenceBin,Occurrence>(dimensions, new OccurrenceBinFactory());
     }
 
-    public static GridManager getGridManager() {
-        Float gridScale = new Float(getProperty(KEY_GRIDSCALE, "10"));
+    
+    public static OccurrenceMatrix<GridCell,OccurrenceBin> getGridMatrix() {
+        Double gridScale = new Double(getProperty(KEY_GRIDSCALE, "10"));
         String gridPeriod = getProperty(KEY_GRIDPERIOD, "ALLTIME");
         
-        return new GridManager(gridScale, gridPeriod);
+        MatrixDimensions dimensions = new MatrixDimensions()
+                .addDimension(new LatitudeSelector(gridScale))
+                .addDimension(new LongitudeSelector(gridScale));
+        
+        switch (gridPeriod) {
+            case "MONTH":
+                dimensions.addDimension(new MonthSelector());
+                break;
+            case "ALLTIME":
+                // Do nothing
+                break;
+            default:
+                dimensions.addDimension(new MultiPeriodSelector(gridPeriod));
+                break;
+        }
+        
+        return new OccurrenceMatrix<GridCell,OccurrenceBin>(dimensions, new GridCellFactory());
     }
 }

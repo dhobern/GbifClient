@@ -11,10 +11,22 @@ package io.github.dhobern.gbifclient.utils;
  */
 public interface CategorySelector {
     
+    /**
+     * Returns the number of categories used by the selector, or -1 if the
+     * selector has undefined cardinality.
+     * 
+     * If the cardinality of a selector is undefined, it cannot be used to
+     * index into an OccurrenceMatrix. It can still be used to organise Mappable objects
+     * but the contents of the OccurrenceMatrix can then only be retrieved 
+     * using the Iterator.
+     * 
+     * @return
+     */
     public int getCategoryCount();
     
-    public int getCategory(OccurrenceBin bin);
+    public int getCategory(Mappable bin);
     
     public String getCategoryLabel(int index);
     
+    public String getName();
 }

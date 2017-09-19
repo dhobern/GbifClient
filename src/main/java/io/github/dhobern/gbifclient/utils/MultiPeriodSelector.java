@@ -5,6 +5,8 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
+import java.time.LocalDate;
+
 /**
  *
  * @author Platyptilia
@@ -36,12 +38,12 @@ public class MultiPeriodSelector implements CategorySelector {
     }
 
     @Override
-    public int getCategory(OccurrenceBin bin) {
+    public int getCategory(Mappable bin) {
         int category = -1;
         
-        String dateString = bin.getDateString();
-        if (!dateString.equals("NULL")) {
-            int year = new Integer(dateString.substring(0,4)).intValue();
+        LocalDate date = bin.getDate();
+        if (date != null) {
+            int year = date.getYear();
             for (int i = 0; category < 0 && i < boundaryYears.length; i++) {
                 if (year >= boundaryYears[i][0] && year <= boundaryYears[i][1]) {
                     category = i;
@@ -55,5 +57,9 @@ public class MultiPeriodSelector implements CategorySelector {
     @Override
     public String getCategoryLabel(int index) {
         return categoryStrings[index];
+    }
+    
+    public String getName() {
+        return "timePeriod";
     }
 }

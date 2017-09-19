@@ -7,18 +7,15 @@ package io.github.dhobern.gbifclient;
 
 import io.github.dhobern.gbifclient.utils.GbifApiRequestFactory;
 import io.github.dhobern.gbifclient.utils.GbifConfiguration;
-import io.github.dhobern.gbifclient.utils.GridManager;
+import io.github.dhobern.gbifclient.utils.GridCell;
+import io.github.dhobern.gbifclient.utils.Occurrence;
 import io.github.dhobern.gbifclient.utils.OccurrenceBin;
-import io.github.dhobern.gbifclient.utils.OccurrenceBinManager;
-import io.github.dhobern.gbifclient.utils.Species;
-import io.github.dhobern.gbifclient.utils.TabDataUtils;
+import io.github.dhobern.gbifclient.utils.OccurrenceMatrix;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
@@ -49,9 +46,9 @@ public class GbifClient {
 
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
-                    OccurrenceBinManager binManager = extractOccurrenceBins(entity.getContent());
+                    OccurrenceMatrix<OccurrenceBin,Occurrence> binMatrix = extractOccurrenceBins(entity.getContent());
                     
-                    GridManager gridManager = gridOccurrenceBins(binManager);
+                    OccurrenceMatrix<GridCell,OccurrenceBin> gridMatrix = gridOccurrenceBins(binMatrix);
                 }
             }
         } catch (IOException ex) {
@@ -59,8 +56,8 @@ public class GbifClient {
         }
     }
     
-    private static OccurrenceBinManager extractOccurrenceBins(InputStream inputStream) {
-        OccurrenceBinManager binManager = GbifConfiguration.getOccurrenceBinManager();
+    private static OccurrenceMatrix<OccurrenceBin,Occurrence> extractOccurrenceBins(InputStream inputStream) {
+        OccurrenceMatrix<OccurrenceBin,Occurrence> binMatrix = GbifConfiguration.getOccurrenceBinMatrix();
 
         try {
             ZipInputStream zipStream = new ZipInputStream(inputStream);
@@ -70,13 +67,27 @@ public class GbifClient {
                         new InputStreamReader(zipStream));
                 
                 String line = reader.readLine();
-                int[] columnIndexes = TabDataUtils.getColumnIndexes(line);
+                HashMap<String,Integer> columnIndexes = new HashMap<String,Integer>();
+                String[] columnHeadings = line.split("\t");
+                for (int i = 0; i < columnHeadings.length; i++) {
+                    columnIndexes.put(columnHeadings[i], i);
+                }
+                
                 Boolean requiresSpecies = GbifConfiguration.requireSpecies();
                 Boolean requiresCoordinates = GbifConfiguration.requireCoordinates();
+                Boolean requiresDate = GbifConfiguration.requireDate();
                 Set<String> countryFilter = GbifConfiguration.getCountryFilter();
+                
+                Occurrence occurrence = new Occurrence(columnIndexes);
                 while ((line = reader.readLine()) != null) {
-                    String[] values = TabDataUtils.getColumnValues(line, columnIndexes);
-                    binManager.add(values, requiresSpecies, requiresCoordinates, countryFilter);
+                    occurrence.setValuesFromString(line);
+
+                    if (    (!requiresSpecies || (occurrence.getSpeciesKey().length() > 0))
+                         && (!requiresCoordinates || ((occurrence.getDecimalLatitude() != null) && (occurrence.getDecimalLongitude() != null)))
+                         && ((countryFilter == null) || countryFilter.contains(occurrence.getCountryCode()))
+                         && (!requiresDate || (occurrence.getDate() != null))) {
+                        binMatrix.insert(occurrence);
+                    }
                 }
             }
 
@@ -86,33 +97,34 @@ public class GbifClient {
             Logger.getLogger(GbifClient.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        exportBins(binManager);
+        /*
+        exportBins(binMatrix);
+        */
         
-        return binManager;
+        return binMatrix;
     }
     
-    private static GridManager gridOccurrenceBins(OccurrenceBinManager binManager) {
-        GridManager gridManager = GbifConfiguration.getGridManager();
+    private static OccurrenceMatrix<GridCell,OccurrenceBin> gridOccurrenceBins(OccurrenceMatrix<OccurrenceBin,Occurrence> binMatrix) {
+        OccurrenceMatrix<GridCell,OccurrenceBin> gridMatrix = GbifConfiguration.getGridMatrix();
 
-        Iterator<OccurrenceBin> iterator = binManager.getOccurrenceBins();
+        Iterator<OccurrenceBin> iterator = binMatrix.getIterator();
         while (iterator.hasNext()) {
             OccurrenceBin bin = iterator.next();
-            gridManager.add(bin);
+            gridMatrix.insert(bin);
         }
         
-        int largest = gridManager.sortBins();
+        gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + ".txt");
         
-        exportGrid(gridManager, largest);
-        
-        return gridManager;
+        return gridMatrix;
     }
     
-    private static void exportBins(OccurrenceBinManager binManager) {
+    /*
+    private static void exportBins(OccurrenceBinManager binMatrix) {
         try {
             PrintWriter writer = new PrintWriter("BinExport-" + scientificName.replaceAll(" ", "_") + ".txt", "UTF-8");
             writer.printf("decimallatitude\tdecimallongitude\teventdate\ttaxonkey\tscientifiname\tcount\n");
 
-            Iterator<OccurrenceBin> iterator = binManager.getOccurrenceBins();
+            Iterator<OccurrenceBin> iterator = binMatrix.getOccurrenceBins();
             while (iterator.hasNext()) {
                 OccurrenceBin bin = iterator.next();
                 writer.printf("%f\t%f\t%s\t%s\t%s\t%d\n",
@@ -129,7 +141,7 @@ public class GbifClient {
         }
     }
 
-    private static void exportGrid(GridManager gridManager, int maxSpecies) {
+    private static void exportGrid(GridManager gridMatrix, int maxSpecies) {
         try {
             PrintWriter writer = new PrintWriter("GridExport-" + scientificName.replaceAll(" ", "_") + ".txt", "UTF-8");
             writer.printf("decimallatitude\tdecimallongitude\ttimeperiod\ttotalspecies\ttotalbins\ttotaloccurrences");
@@ -144,27 +156,26 @@ public class GbifClient {
             }
             writer.printf("\n");
             
-            Species[][][][] grid = gridManager.getGrid();
-            int xRange = gridManager.getXRange();
-            int yRange = gridManager.getYRange();
-            int zRange = gridManager.getZRange();
+            Species[][][][] grid = gridMatrix.getGrid();
+            int xRange = gridMatrix.getXRange();
+            int yRange = gridMatrix.getYRange();
+            int zRange = gridMatrix.getZRange();
             
             String[] xLabels = new String[xRange];
             String[] yLabels = new String[yRange];
             String[] zLabels = new String[zRange];
             
             for (int i = 0; i < xRange; i++) {
-                xLabels[i] = gridManager.getXLabel(i);
+                xLabels[i] = gridMatrix.getXLabel(i);
             }
             for (int i = 0; i < yRange; i++) {
-                yLabels[i] = gridManager.getYLabel(i);
+                yLabels[i] = gridMatrix.getYLabel(i);
             }
             for (int i = 0; i < zRange; i++) {
-                zLabels[i] = gridManager.getZLabel(i);
+                zLabels[i] = gridMatrix.getZLabel(i);
             }
             
-            /* Outer loop iterates over latitude since this is better order */ 
-            for (int j = 0; j < yRange; j++) {
+                for (int j = 0; j < yRange; j++) {
                 for (int i = 0; i < xRange; i++) {
                     for (int k = 0; k < zRange; k++) {
                         Species[] cell = grid[i][j][k];
@@ -197,5 +208,6 @@ public class GbifClient {
         } catch (IOException e) {
             Logger.getLogger(GbifClient.class.getName()).log(Level.SEVERE, null, e);
         }
-    }
+    
+    }*/
 }

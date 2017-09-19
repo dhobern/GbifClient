@@ -6,21 +6,24 @@
 package io.github.dhobern.gbifclient.utils;
 
 import java.time.LocalDate;
+import java.time.Month;
+import java.time.temporal.ChronoUnit;
 
 /**
  *
  * @author Platyptilia
  */
-public class MonthSelector implements CategorySelector {
+public class DateSelector implements CategorySelector {
     
-    private final static String[] categoryLabels = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
-
-    public MonthSelector() {
+    private LocalDate arbitraryOrigin = LocalDate.of(1700, Month.JANUARY, 1);
+    
+    public DateSelector() {
+        
     }
 
     @Override
     public int getCategoryCount() {
-        return 12;
+        return -1;
     }
 
     @Override
@@ -28,17 +31,19 @@ public class MonthSelector implements CategorySelector {
         int category = -1;
         LocalDate date = bin.getDate();
         if (date != null) {
-            category = date.getMonthValue() - 1;
+            category = (int) arbitraryOrigin.until(date, ChronoUnit.DAYS);
         }
         return category;
     }
 
     @Override
     public String getCategoryLabel(int index) {
-        return categoryLabels[index];
+        LocalDate date = arbitraryOrigin.plus(index, ChronoUnit.DAYS);
+        return date.toString();
     }
     
     public String getName() {
-        return "month";
+        return "date";
     }
+
 }

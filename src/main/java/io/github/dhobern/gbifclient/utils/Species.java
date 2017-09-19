@@ -11,19 +11,19 @@ package io.github.dhobern.gbifclient.utils;
  */
 public class Species implements Comparable<Species> {
     private String speciesKey;
-    private String canonicalName;
+    private String scientificName;
     private int binCount;
     private int occurrenceCount;
     
-    public Species(OccurrenceBin bin) {
-        speciesKey = bin.getSpeciesKey();
-        canonicalName = bin.getCanonicalName();
-        occurrenceCount = bin.getCount();
+    public Species(Mappable m) {
+        speciesKey = m.getNamedCategory(Occurrence.SPECIESKEY);
+        scientificName = m.getNamedCategory(Occurrence.SCIENTIFICNAME);
+        occurrenceCount = m.getCount();
         binCount = 1;
     }
     
-    public int increment(OccurrenceBin bin) {
-        occurrenceCount += bin.getCount();
+    public int increment(Mappable m) {
+        occurrenceCount += m.getCount();
         return ++binCount;
     }
 
@@ -31,8 +31,8 @@ public class Species implements Comparable<Species> {
         return speciesKey;
     }
 
-    public String getCanonicalName() {
-        return canonicalName;
+    public String getScientificName() {
+        return scientificName;
     }
 
     public int getBinCount() {
@@ -44,14 +44,14 @@ public class Species implements Comparable<Species> {
     }
     
     public String toString() {
-        return canonicalName;
+        return scientificName;
     }
 
     @Override
     public int compareTo(Species o) {
         int comparison = o.getBinCount() - binCount;
         if (comparison == 0) {
-            comparison = canonicalName.compareTo(o.getCanonicalName());
+            comparison = scientificName.compareTo(o.getScientificName());
         }
         return comparison;
     }

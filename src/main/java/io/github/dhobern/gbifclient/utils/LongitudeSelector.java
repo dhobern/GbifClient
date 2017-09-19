@@ -5,28 +5,28 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
+import java.text.DecimalFormat;
+
 /**
  *
  * @author Platyptilia
  */
-public class AllTimeSelector implements CategorySelector {
+public class LongitudeSelector extends CoordinateSelector {
     
-    public AllTimeSelector() {
+    public LongitudeSelector(int limit, double scale) {
+        super(180, scale);
     }
-
-    public int getCategoryCount() {
-        return 1;
+    
+    public LongitudeSelector(double scale) {
+        this(180, scale);
     }
-
+    
+    @Override
     public int getCategory(Mappable bin) {
-        return 0;
-    }
-
-    public String getCategoryLabel(int index) {
-        return "ALLTIME";
+        return getCategory(bin.getDecimalLongitude());
     }
     
     public String getName() {
-        return "timePeriod";
+        return "longitudeRange";
     }
 }
