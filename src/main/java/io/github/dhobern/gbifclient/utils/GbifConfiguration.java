@@ -151,16 +151,29 @@ public class GbifConfiguration {
 
     
     public static OccurrenceMatrix<GridCell,OccurrenceBin> getGridMatrix() {
-        Double gridScale = new Double(getProperty(KEY_GRIDSCALE, "10"));
+        MatrixDimensions dimensions = new MatrixDimensions();
+        
+        String spatial = getProperty(KEY_GRIDSCALE, "10");
+        
+        if (spatial.equals("COUNTRY")) {
+            dimensions.addDimension(new CountrySelector());
+        } else{
+            Double gridScale = new Double(getProperty(KEY_GRIDSCALE, "10"));
+            dimensions.addDimension(new LatitudeSelector(gridScale))
+                      .addDimension(new LongitudeSelector(gridScale));
+        }
+        
         String gridPeriod = getProperty(KEY_GRIDPERIOD, "ALLTIME");
-        
-        MatrixDimensions dimensions = new MatrixDimensions()
-                .addDimension(new LatitudeSelector(gridScale))
-                .addDimension(new LongitudeSelector(gridScale));
-        
+
         switch (gridPeriod) {
             case "MONTH":
                 dimensions.addDimension(new MonthSelector());
+                break;
+            case "JULIANWEEK":
+                dimensions.addDimension(new JulianWeekSelector());
+                break;
+            case "JULIANDAY":
+                dimensions.addDimension(new JulianDaySelector());
                 break;
             case "ALLTIME":
                 // Do nothing

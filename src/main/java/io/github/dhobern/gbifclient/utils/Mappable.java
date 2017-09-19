@@ -14,6 +14,7 @@ import java.time.LocalDate;
 public interface Mappable {
     public Double getDecimalLatitude();
     public Double getDecimalLongitude();
+    public String getCountryCode();
     public LocalDate getDate();
     public String getNamedCategory(String category);
     public int getCount();

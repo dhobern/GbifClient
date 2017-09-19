@@ -27,7 +27,7 @@ public class MatrixDimensions {
         selectors.add(s);
 
         String indexFormat = ((selectorCount > 0) ? "-%" : "%")
-                + ((s.getCategoryCount() < 0) 
+                + ((s.getCategoryCount() < 10) 
                         ? "" : new Double(Math.ceil(Math.log10(s.getCategoryCount()))).intValue())
                 + "d";
         

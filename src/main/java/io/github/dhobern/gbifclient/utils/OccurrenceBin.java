@@ -18,6 +18,8 @@ public class OccurrenceBin extends CellValue implements Mappable, Comparable {
     
     private String speciesKey;
     private String scientificName;
+    private String countryCode;
+
     private double decimalLatitude;
     private double decimalLongitude;
     private LocalDate date;
@@ -42,6 +44,7 @@ public class OccurrenceBin extends CellValue implements Mappable, Comparable {
         
         decimalLatitude = m.getDecimalLatitude();
         decimalLongitude = m.getDecimalLongitude();
+        countryCode = m.getCountryCode();
         date = m.getDate();
 
         count = 1;
@@ -60,6 +63,10 @@ public class OccurrenceBin extends CellValue implements Mappable, Comparable {
         return scientificName;
     }
 
+    public String getCountryCode() {
+        return countryCode;
+    }
+    
     public int getCount() {
         return count;
     }

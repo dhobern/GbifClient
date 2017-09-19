@@ -44,6 +44,7 @@ public class GbifApiRequestFactory {
     private static final String SPECIES_GET_URL_BASE = "https://api.gbif.org/v1/species/";
     private static final String SPECIES_MATCH_URL_BASE = "https://api.gbif.org/v1/species/match/?name=";
     private static final String LIST_DOWNLOADS_URL_BASE = "https://api.gbif.org/v1/occurrence/download/user/";
+    private static final String ENUMERATION_GET_URL_BASE = "https://api.gbif.org/v1/enumeration/basic/";
     
     private static CredentialsProvider provider;
     
@@ -203,6 +204,32 @@ public class GbifApiRequestFactory {
         return object;
     }
     
+    public static JSONArray readJsonEntityAsArray(HttpResponse response) throws JSONException {
+        JSONArray array = null;
+        BufferedReader reader = null;
+        try {
+            HttpEntity entity = response.getEntity();
+            StringBuffer sb = new StringBuffer();
+            reader = new BufferedReader(new InputStreamReader(entity.getContent()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            array = new JSONArray(sb.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalStateException ex) {
+            Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException ex) {
+                Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return array;
+    }
+    
     public static String getScientificName(String taxonKey) {
         if (cachedNames == null) {
             cachedNames = new HashMap<String,String>();
@@ -271,6 +298,31 @@ public class GbifApiRequestFactory {
         }
         
         return downloadKey;
+    }
+
+    public static HttpUriRequest createGetEnumeration(String n) {
+        return new HttpGet(
+                new StringBuilder(ENUMERATION_GET_URL_BASE).append(n).toString());
+    }
+
+    public static HttpResponse executeGetEnumeration(String n) throws IOException {
+        return getHttpClient().execute(createGetEnumeration(n));
+    }
+    
+    public static String[] getEnumeration(String n) {
+        String[] enumeration = null;
+        
+        try {
+            JSONArray array = readJsonEntityAsArray(executeGetEnumeration(n));
+            enumeration = new String[array.length()];
+            for (int i = 0; i < enumeration.length; i++) {
+                enumeration[i] = array.getString(i);
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return enumeration;
     }
 
 }
