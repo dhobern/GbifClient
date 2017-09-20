@@ -38,4 +38,6 @@ public abstract class CellValue {
     public abstract String[] getItemLabels(int format, int maxCellSize);
     
     public abstract String[] getItems(int format);
+    
+    public abstract String getItem(int format, String itemLabel, int index);
 }

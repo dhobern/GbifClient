@@ -17,7 +17,7 @@ import java.util.Iterator;
 public class GridCell extends CellValue implements Comparable {
     
     public static final String[] countLabels = new String[] { 
-        "speciescount", "bincount", "occurrenceount"
+        "speciescount", "bincount", "occurrencecount"
     };
     
     private static HashSet<String> allSpecies = new HashSet<String>();
@@ -111,6 +111,28 @@ public class GridCell extends CellValue implements Comparable {
         return items;
     }
 
+    public String getItem(int format, String itemLabel, int index) {
+        String item = "";
+        
+        switch(format) {
+            case OccurrenceMatrix.FORMAT_OCCUPANCY:
+                for (int i = 0; item.length() == 0 && i < species.length; i++) {
+                    if (species[i].getScientificName().equals(itemLabel)) {
+                        item = new Integer(species[i].getBinCount()).toString();
+                    }
+                }
+                break;
+                
+            case OccurrenceMatrix.FORMAT_RANKORDER:
+                if (index < species.length) {
+                    Species s = species[index];
+                    item = s.getScientificName() + " [ " + s.getBinCount() + " / " + s.getOccurrenceCount() + " ]";
+                }
+                break;
+                
+        }
+        return item;
+    }
 
     @Override
     public int compareTo(Object o) {

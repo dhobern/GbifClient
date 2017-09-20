@@ -69,25 +69,34 @@ public class OccurrenceMatrix<S extends CellValue & Comparable,T extends Mappabl
     public S getCellValue(int[] offsets) {
         return matrix.get(dimensions.getCellKey(offsets));
     }
-    
+
     public void exportGrid(String fileName, int format) {
+        ArrayList<S> cells = new ArrayList<S>(matrix.values());
+        Collections.sort(cells);
+
+        int maxCellSize = 0;
+
+        Iterator<S> iterator = cells.iterator();
+        while(iterator.hasNext()) {
+            S cell = iterator.next();
+            cell.prepareForExport();
+            int size = cell.getCounts()[0];
+            if (size > maxCellSize) {
+                maxCellSize = size;
+            }
+        }
+
+        if (GbifConfiguration.rotateMatrix()) {
+            exportGridRotated(fileName, cells, format, maxCellSize);
+        } else {
+            exportGridDefault(fileName, cells, format, maxCellSize);
+        }
+    }
+
+    
+    private void exportGridDefault(String fileName, ArrayList<S> cells, int format, int maxCellSize) {
         try {
             PrintWriter writer = new PrintWriter(fileName, "UTF-8");
-
-            ArrayList<S> cells = new ArrayList<S>(matrix.values());
-            Collections.sort(cells);
-
-            int maxCellSize = 0;
-
-            Iterator<S> iterator = cells.iterator();
-            while(iterator.hasNext()) {
-                S cell = iterator.next();
-                cell.prepareForExport();
-                int size = cell.getCounts()[0];
-                if (size > maxCellSize) {
-                    maxCellSize = size;
-                }
-            }
 
             ArrayList<CategorySelector> selectors = dimensions.getSelectors();
             for (int i = 0; i < selectors.size(); i++) {
@@ -106,7 +115,7 @@ public class OccurrenceMatrix<S extends CellValue & Comparable,T extends Mappabl
             }
             writer.printf("\n");
 
-           iterator = cells.iterator();
+           Iterator<S> iterator = cells.iterator();
             while(iterator.hasNext()) {
                 S cell = iterator.next();
                 int[] position = cell.getCellPosition();
@@ -127,6 +136,55 @@ public class OccurrenceMatrix<S extends CellValue & Comparable,T extends Mappabl
                 String[] items = cell.getItems(format);
                 for (int i = 0; i < items.length; i++) {
                     writer.printf("\t%s", items[i]);
+                }
+                writer.printf("\n");
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            Logger.getLogger(OccurrenceMatrix.class.getName()).log(Level.SEVERE, null, e);
+        }
+    }
+
+    
+    private void exportGridRotated(String fileName, ArrayList<S> cells, int format, int maxCellSize) {
+        try {
+            PrintWriter writer = new PrintWriter(fileName, "UTF-8");
+
+            ArrayList<CategorySelector> selectors = dimensions.getSelectors();
+
+            for (int i = 0; i < selectors.size(); i++) {
+                writer.printf(selectors.get(i).getName());
+                Iterator<S> iterator = cells.iterator();
+                while(iterator.hasNext()) {
+                    S cell = iterator.next();
+                    int[] position = cell.getCellPosition();
+                    if (position[i] < 0) {
+                        writer.printf("\tUNSPECIFIED");
+                    } else {
+                        writer.printf("\t%s", selectors.get(i).getCategoryLabel(position[i]));
+                    }
+                }
+                writer.printf("\n");
+            }
+            String[] countLabels = cells.get(0).getCountLabels();
+            for (int i = 0; i < countLabels.length; i++) {
+                writer.printf("%s", countLabels[i]);
+                Iterator<S> iterator = cells.iterator();
+                while(iterator.hasNext()) {
+                    S cell = iterator.next();
+                    writer.printf("\t%d", cell.getCounts()[i]);
+                }
+                writer.printf("\n");
+            }
+            String[] itemLabels = cells.get(0).getItemLabels(format, maxCellSize);
+            for (int i = 0; i < itemLabels.length; i++) {
+                String itemLabel = itemLabels[i];
+                writer.printf("%s", itemLabel);
+                Iterator<S> iterator = cells.iterator();
+                while(iterator.hasNext()) {
+                    S cell = iterator.next();
+                    writer.printf("\t%s", cell.getItem(format, itemLabel, i));
                 }
                 writer.printf("\n");
             }

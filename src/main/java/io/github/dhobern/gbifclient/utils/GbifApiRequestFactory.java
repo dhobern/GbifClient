@@ -256,7 +256,10 @@ public class GbifApiRequestFactory {
         
         try {
             JSONObject object = readJsonEntity(executeSpeciesMatch(scientificName));
-            taxonKey = object.getString("usageKey");
+            String matchType = object.getString("matchType");
+            if (matchType != null && matchType.equals("EXACT")) {
+                taxonKey = object.getString("usageKey");
+            }
         } catch (Exception ex) {
             Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.SEVERE, null, ex);
         }

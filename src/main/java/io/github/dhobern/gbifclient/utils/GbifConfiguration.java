@@ -27,6 +27,7 @@ public class GbifConfiguration {
     private static final String KEY_GBIFPASSWORD = "gbifpassword";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_FORMAT = "format";
+    private static final String KEY_ROTATEMATRIX = "rotatematrix";
     private static final String KEY_BINSCALE = "binscale";
     private static final String KEY_BINPERIOD = "binperiod";
     private static final String KEY_GRIDSCALE = "gridscale";
@@ -36,30 +37,57 @@ public class GbifConfiguration {
     private static final String KEY_REQUIRESPECIES = "requirespecies";
     private static final String KEY_REQUIREDATE = "requiredate";
     private static final String KEY_COUNTRYFILTER = "countryfilter";
+    private static final String KEY_SCIENTIFICNAME = "scientificname";
 
     private static final String FORMAT_DWCA = "DWCA";
     private static final String FORMAT_SIMPLE_CSV = "SIMPLE_CSV";
     
-    private static final String PROPERTY_FILE = "gbifclient.properties";
+    private static final String GLOBAL_PROPERTY_FILE = "gbifclient-default.cfg";
+    private static final String LOCAL_PROPERTY_FILE = "gbifclient-local.cfg";
     
+    private static Properties defaultProperties;
+    private static Properties localProperties;
     private static Properties properties;
     
     static {
-        properties = new Properties();
-        InputStream input = GbifConfiguration.class.getClassLoader().getResourceAsStream(PROPERTY_FILE);
+        defaultProperties = loadProperties(new Properties(), GLOBAL_PROPERTY_FILE);
+        localProperties = loadProperties(new Properties(defaultProperties), LOCAL_PROPERTY_FILE);
+        properties = new Properties(localProperties);
+    }
+    
+    public static Properties loadProperties(Properties p, String fileName) {
+        InputStream input = null;
+        
         try {
+            input = GbifConfiguration.class.getClassLoader().getResourceAsStream(fileName);
             if (input != null) {
-                properties.load(input);
+                p.load(input);
             }
         } catch (IOException ex) {
             Logger.getLogger(GbifConfiguration.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (input != null) {
                 try {
-                        input.close();
+                    input.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+        
+        return p;
+    }
+        
+    public static void processArgV(String[] argv) {
+        for (int i = 0; i < argv.length; i++) {
+            String[] elements = argv[i].split("=", 2);
+
+            // Arguments which do not set properties are assumed to be property 
+            // filenames and these are loaded into the runtime properties
+            if (elements.length == 1) {
+                loadProperties(properties, argv[i]);
+            } else {
+                properties.put(elements[0], elements[i]);
             }
         }
     }
@@ -101,6 +129,10 @@ public class GbifConfiguration {
     public static String getEmail() {
         return getProperty(KEY_EMAIL);
     }
+
+    public static String getScientificName() {
+        return getProperty(KEY_SCIENTIFICNAME);
+    }
     
     public static String getFormat() {
         return getProperty(KEY_FORMAT, FORMAT_DWCA);
@@ -120,6 +152,10 @@ public class GbifConfiguration {
 
     public static Boolean requireDate() {
         return new Boolean(getProperty(KEY_REQUIREDATE, "true"));
+    }
+
+    public static Boolean rotateMatrix() {
+        return new Boolean(getProperty(KEY_ROTATEMATRIX, "false"));
     }
 
     public static Set<String> getCountryFilter() {

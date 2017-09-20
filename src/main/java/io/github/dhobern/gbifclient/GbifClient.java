@@ -35,23 +35,32 @@ public class GbifClient {
     
     public static void main(String[] argv) throws InterruptedException {
         try {
-            if (argv.length == 0) {
-                System.err.println("Supply scientific name as first parameter");
+            if (argv.length > 0) {
+                GbifConfiguration.processArgV(argv);
+            }
+            scientificName = GbifConfiguration.getScientificName();
+
+            if (scientificName == null || scientificName.length() == 0) {
+                System.err.println("Please supply scientific name in configuration file or as command line parameter assignment for scientificname");
+                System.err.println("   Example: java io.github.dhobern.gbifclient.GbifClient \"scientificname=Cactaceae\"");
             } else {
-                scientificName = argv[0];
                 String taxonKey = GbifApiRequestFactory.getTaxonKey(scientificName);
-                
-                HttpResponse response 
-                    = GbifApiRequestFactory.executeDownloadRequestWait("TAXON_KEY", taxonKey);
 
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    OccurrenceMatrix<OccurrenceBin,Occurrence> binMatrix = extractOccurrenceBins(entity.getContent());
-                    
-                    OccurrenceMatrix<GridCell,OccurrenceBin> gridMatrix = gridOccurrenceBins(binMatrix);
+                if (taxonKey == null) {
+                    System.err.println("Unrecognised scientific name: " + scientificName);
+                } else {
+                    HttpResponse response 
+                        = GbifApiRequestFactory.executeDownloadRequestWait("TAXON_KEY", taxonKey);
 
-                    gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + "-Ranked.txt", OccurrenceMatrix.FORMAT_RANKORDER);
-                    gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + "-Occupancy.txt", OccurrenceMatrix.FORMAT_OCCUPANCY);
+                    HttpEntity entity = response.getEntity();
+                    if (entity != null) {
+                        OccurrenceMatrix<OccurrenceBin,Occurrence> binMatrix = extractOccurrenceBins(entity.getContent());
+
+                        OccurrenceMatrix<GridCell,OccurrenceBin> gridMatrix = gridOccurrenceBins(binMatrix);
+
+                        gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + "-Ranked.txt", OccurrenceMatrix.FORMAT_RANKORDER);
+                        gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + "-Occupancy.txt", OccurrenceMatrix.FORMAT_OCCUPANCY);
+                    }
                 }
             }
         } catch (IOException ex) {

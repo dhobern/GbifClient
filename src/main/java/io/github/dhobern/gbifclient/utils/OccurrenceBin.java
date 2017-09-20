@@ -120,6 +120,21 @@ public class OccurrenceBin extends CellValue implements Mappable, Comparable {
         return items;
     }
 
+    public String getItem(int format, String itemLabel, int index) {
+        String item = null;
+        
+        switch(itemLabel) {
+            case Occurrence.SCIENTIFICNAME:
+                item = scientificName;
+                break;
+            case Occurrence.SPECIESKEY:
+                item = speciesKey;
+                break;
+        }
+        
+        return item;
+    }
+
     public int compareTo(Object o) {
         int comparison = 0;
         
