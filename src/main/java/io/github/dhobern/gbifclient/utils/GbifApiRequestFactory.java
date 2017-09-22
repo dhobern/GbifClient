@@ -66,26 +66,13 @@ public class GbifApiRequestFactory {
             .build();
     }
     
-    public static HttpUriRequest createDownloadRequest(String k, String v) {
+    public static HttpUriRequest createDownloadRequest(String jsonRequest) {
         HttpPost post = null;
         
         try {
-            String params = new StringBuilder("{ \"creator\":\"")
-                    .append(GbifConfiguration.getGbifUser())
-                    .append("\", \"notification_address\": [\"")
-                    .append(GbifConfiguration.getEmail())
-                    .append("\"], \"format\":\"")
-                    .append(GbifConfiguration.getFormat())
-                    .append("\", \"predicate\": { \"type\":\"equals\", \"key\":\"")
-                    .append(k)
-                    .append("\", \"value\":\"")
-                    .append(v)
-                    .append("\" } }")
-                    .toString();
-            
             post = new HttpPost(DOWNLOAD_REQUEST_URL);
             post.addHeader("content-type", "application/json");
-            post.setEntity(new StringEntity(params));
+            post.setEntity(new StringEntity(jsonRequest));
         } catch (UnsupportedEncodingException ex) {
             Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -93,8 +80,27 @@ public class GbifApiRequestFactory {
         return post;
     }
 
-    public static HttpResponse executeDownloadRequest(String k, String v) throws IOException {
-        return getHttpClient().execute(createDownloadRequest(k, v));
+    public static String executeDownloadRequest(String k, String v) throws IOException {
+        String jsonRequest = constructJsonRequest(k, v);
+        
+        String key = findExistingDownloadKey(jsonRequest);
+        
+        if (key == null) {
+            HttpResponse response = getHttpClient().execute(createDownloadRequest(jsonRequest));;
+            if (response.getStatusLine().getStatusCode() == 201) {
+                HttpEntity entity;
+                BufferedReader reader;
+                entity = response.getEntity();
+                if ( entity != null ) {
+                    reader = new BufferedReader(new InputStreamReader(entity.getContent()));
+                    key = reader.readLine();
+                    String message = new StringBuffer("Download Key: ").append(key).toString();
+                    Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.INFO, message, key);
+                }
+            }
+        }
+        
+        return  key;
     }
     
     public static HttpUriRequest createDownloadGet(String k) {
@@ -130,30 +136,28 @@ public class GbifApiRequestFactory {
     }
     
     public static HttpResponse executeDownloadRequestWait(String k, String v) throws IOException {
-        String key = findExistingDownloadKey(k, v);
-        
-        if(key == null) {
-            HttpResponse firstResponse = executeDownloadRequest(k, v);        
-
-            if (firstResponse.getStatusLine().getStatusCode() == 201) {
-                HttpEntity entity;
-                BufferedReader reader;
-                entity = firstResponse.getEntity();
-                if ( entity != null ) {
-                    reader = new BufferedReader(new InputStreamReader(entity.getContent()));
-                    key = reader.readLine();
-                    String message = new StringBuffer("Download Key: ").append(key).toString();
-                    Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.INFO, message, key);
-                }
-            }
-        }
-
+        String key = executeDownloadRequest(k, v);        
         return executeDownloadGetWait(key);
+    }
+    
+    private static String constructJsonRequest(String k, String v) {
+        return new StringBuilder("{ \"creator\":\"")
+        .append(GbifConfiguration.getGbifUser())
+        .append("\", \"notificationAddresses\": [\"")
+        .append(GbifConfiguration.getEmail())
+        .append("\"], \"format\":\"")
+        .append(GbifConfiguration.getFormat())
+        .append("\", \"predicate\": { \"type\":\"equals\", \"key\":\"")
+        .append(k)
+        .append("\", \"value\":\"")
+        .append(v)
+        .append("\" } }")
+        .toString();
     }
     
     public static HttpUriRequest createSpeciesGet(String k) {
         return new HttpGet(
-                new StringBuilder(SPECIES_GET_URL_BASE).append(k).toString());
+                new StringBuilder(SPECIES_GET_URL_BASE).append(k.replace(" ", "+")).toString());
     }
 
     public static HttpResponse executeSpeciesGet(String k) throws IOException {
@@ -162,7 +166,7 @@ public class GbifApiRequestFactory {
     
     public static HttpUriRequest createSpeciesMatch(String n) {
         return new HttpGet(
-                new StringBuilder(SPECIES_MATCH_URL_BASE).append(n).toString());
+                new StringBuilder(SPECIES_MATCH_URL_BASE).append(n.replace(" ", "+ ")).toString());
     }
 
     public static HttpResponse executeSpeciesMatch(String n) throws IOException {
@@ -267,7 +271,7 @@ public class GbifApiRequestFactory {
         return taxonKey;
     }
 
-    private static String findExistingDownloadKey(String key, String value) {
+    private static String findExistingDownloadKey(String jsonRequest) {
         String downloadKey = null;
         Integer cacheDownloads = GbifConfiguration.getCacheDownloads();
         
@@ -277,16 +281,14 @@ public class GbifApiRequestFactory {
             try {
                 JSONObject object = readJsonEntity(executeListDownloads());
                 JSONArray array = object.getJSONArray("results");
+                JSONObject thisRequest = new JSONObject(jsonRequest);
                 if (array != null) {
                     for (int i = 0; downloadKey == null && i < array.length(); i++) {
                         JSONObject d = array.getJSONObject(i);
                         JSONObject request = d.getJSONObject("request");
-                        JSONObject predicate = request.getJSONObject("predicate");
                         String status = d.getString("status");
                         ZonedDateTime timestamp = ZonedDateTime.parse(d.getString("created"),DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("Europe/Berlin")));
-                        if (    predicate.getString("type").equals("equals")
-                             && predicate.getString("key").equals(key)
-                             && predicate.getString("value").equals(value)
+                        if (    JsonUtils.objectsMatch(request, thisRequest, true)
                              && timestamp.isAfter(threshold)
                              && (    status.equals("SUCCEEDED")
                                   || status.equals("PREPARING")

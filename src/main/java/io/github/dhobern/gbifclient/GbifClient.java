@@ -50,7 +50,8 @@ public class GbifClient {
                     System.err.println("Unrecognised scientific name: " + scientificName);
                 } else {
                     HttpResponse response 
-                        = GbifApiRequestFactory.executeDownloadRequestWait("TAXON_KEY", taxonKey);
+
+                            = GbifApiRequestFactory.executeDownloadRequestWait("TAXON_KEY", taxonKey);
 
                     HttpEntity entity = response.getEntity();
                     if (entity != null) {

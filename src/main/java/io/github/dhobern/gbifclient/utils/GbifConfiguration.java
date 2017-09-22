@@ -189,19 +189,17 @@ public class GbifConfiguration {
     public static OccurrenceMatrix<GridCell,OccurrenceBin> getGridMatrix() {
         MatrixDimensions dimensions = new MatrixDimensions();
         
-        String spatial = getProperty(KEY_GRIDSCALE, "10");
-        
-        if (spatial.equals("COUNTRY")) {
-            dimensions.addDimension(new CountrySelector());
-        } else{
-            Double gridScale = new Double(getProperty(KEY_GRIDSCALE, "10"));
-            dimensions.addDimension(new LatitudeSelector(gridScale))
-                      .addDimension(new LongitudeSelector(gridScale));
-        }
-        
-        String gridPeriod = getProperty(KEY_GRIDPERIOD, "ALLTIME");
+        addDimensions(dimensions, getProperty(KEY_GRIDSCALE, "10"));
+        addDimensions(dimensions, getProperty(KEY_GRIDPERIOD, "ALLTIME"));
 
-        switch (gridPeriod) {
+        return new OccurrenceMatrix<GridCell,OccurrenceBin>(dimensions, new GridCellFactory());
+    }
+    
+    public static void addDimensions(MatrixDimensions dimensions, String key) {
+        switch (key) {
+            case "COUNTRY":
+                dimensions.addDimension(new CountrySelector());
+                break;
             case "MONTH":
                 dimensions.addDimension(new MonthSelector());
                 break;
@@ -215,10 +213,14 @@ public class GbifConfiguration {
                 // Do nothing
                 break;
             default:
-                dimensions.addDimension(new MultiPeriodSelector(gridPeriod));
+                if (key.indexOf("-") > 0) {
+                    dimensions.addDimension(new MultiPeriodSelector(key));
+                } else {
+                    Double gridScale = new Double(key);
+                    dimensions.addDimension(new LatitudeSelector(gridScale))
+                              .addDimension(new LongitudeSelector(gridScale));
+                }
                 break;
         }
-        
-        return new OccurrenceMatrix<GridCell,OccurrenceBin>(dimensions, new GridCellFactory());
     }
 }
