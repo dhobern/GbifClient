@@ -5,13 +5,15 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
+import io.github.dhobern.gbifclient.matrix.CategorySelector;
+import io.github.dhobern.gbifclient.matrix.Item;
 import java.time.LocalDate;
 
 /**
  *
  * @author Platyptilia
  */
-public class JulianDaySelector implements CategorySelector {
+public class JulianDaySelector extends DateSelector {
     
     public JulianDaySelector() {
     }
@@ -22,9 +24,11 @@ public class JulianDaySelector implements CategorySelector {
     }
 
     @Override
-    public int getCategory(Mappable bin) {
+    public int getCategory(Item item) {
         int category = -1;
-        LocalDate date = bin.getDate();
+        LocalDate date = getDate(item.get(Occurrence.YEAR),
+                                 item.get(Occurrence.MONTH),
+                                 item.get(Occurrence.DAY));
         if (date != null) {
             category = date.getDayOfYear() - 1;
         }

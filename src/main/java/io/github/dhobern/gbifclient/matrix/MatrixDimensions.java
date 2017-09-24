@@ -3,9 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package io.github.dhobern.gbifclient.utils;
+package io.github.dhobern.gbifclient.matrix;
 
+import io.github.dhobern.gbifclient.utils.OccurrenceInterface;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -25,14 +30,14 @@ public class MatrixDimensions {
     
     public MatrixDimensions addDimension(CategorySelector s) {
         selectors.add(s);
-
-        String indexFormat = ((selectorCount > 0) ? "-%" : "%")
+        
+        String indexFormat = ((selectorCount > 0) ? "_%" : "%")
                 + ((s.getCategoryCount() < 10) 
-                        ? "" : new Double(Math.ceil(Math.log10(s.getCategoryCount()))).intValue())
+                        ? "" : ("0" + new Double(Math.ceil(Math.log10(s.getCategoryCount()))).intValue()))
                 + "d";
         
         indexFormats.add(indexFormat);
-        
+
         selectorCount++;
         
         if (s.getCategoryCount() < 0) {
@@ -42,14 +47,15 @@ public class MatrixDimensions {
         return this;
     }
     
-    public int[] getCellPosition(Mappable m) {
+    public int[] getCellPosition(Item item) {
         int[] position = new int[selectorCount];
         for (int i = 0; i < selectorCount; i++) {
-            position[i] = selectors.get(i).getCategory(m);
+            position[i] = selectors.get(i).getCategory(item);
         }
         return position;
     }
     
+    /*
     public int[] getDimensions() {
         int[] dimensions = new int[selectorCount];
         
@@ -59,8 +65,17 @@ public class MatrixDimensions {
         
         return dimensions;
     }
+*/
     
-    public String getCellKey(int[] position) {
+    public boolean isUnboundedMatrix() {
+        return unboundedMatrix;
+    }
+    
+    public ArrayList<CategorySelector> getSelectors() {
+        return selectors;
+    }
+
+    public String lock(int[] position) {
         String key = "";
         
         for (int i = 0; i < selectorCount && i < position.length; i++) {
@@ -69,12 +84,14 @@ public class MatrixDimensions {
         
         return key;
     }
-    
-    public boolean isUnboundedMatrix() {
-        return unboundedMatrix;
-    }
-    
-    public ArrayList<CategorySelector> getSelectors() {
-        return selectors;
+
+    public int[] unlock(String key) {
+        String[] parts = key.split("_");
+        int[] unlocked = new int[parts.length];
+        
+        for (int i = 0; i < unlocked.length; i++) {
+            unlocked[i] = new Integer(parts[i]).intValue();
+        }
+        return unlocked;
     }
 }

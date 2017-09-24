@@ -5,6 +5,8 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
+import io.github.dhobern.gbifclient.matrix.CategorySelector;
+import io.github.dhobern.gbifclient.matrix.Item;
 import java.text.DecimalFormat;
 
 /**
@@ -12,7 +14,7 @@ import java.text.DecimalFormat;
  * @author Platyptilia
  */
 public abstract class CoordinateSelector implements CategorySelector {
-    
+
     private double coordinateLimit;
     private double gridScale;
     private int count;
@@ -35,8 +37,7 @@ public abstract class CoordinateSelector implements CategorySelector {
         return count;
     }
 
-    @Override
-    public abstract int getCategory(Mappable bin);
+    public abstract int getCategory(Item item);
 
     public int getCategory(double value) {
         return new Double(Math.floor((value + coordinateLimit) / gridScale)).intValue();

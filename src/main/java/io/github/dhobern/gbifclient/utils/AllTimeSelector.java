@@ -5,11 +5,16 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
+import io.github.dhobern.gbifclient.matrix.CategorySelector;
+import io.github.dhobern.gbifclient.matrix.Item;
+
 /**
  *
  * @author Platyptilia
  */
 public class AllTimeSelector implements CategorySelector {
+
+    private static String[] requiredElements = {};
     
     public AllTimeSelector() {
     }
@@ -18,15 +23,20 @@ public class AllTimeSelector implements CategorySelector {
         return 1;
     }
 
-    public int getCategory(Mappable bin) {
-        return 0;
-    }
-
     public String getCategoryLabel(int index) {
         return "ALLTIME";
     }
     
     public String getName() {
         return "timePeriod";
+    }
+
+    @Override
+    public int getCategory(Item item) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public String[] getRequiredElements() {
+        return requiredElements;
     }
 }

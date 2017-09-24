@@ -5,6 +5,9 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
+import io.github.dhobern.gbifclient.matrix.Item;
+import io.github.dhobern.gbifclient.matrix.MatrixDimensions;
+import io.github.dhobern.gbifclient.matrix.MultidimensionMatrix;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -27,11 +30,10 @@ public class GbifConfiguration {
     private static final String KEY_GBIFPASSWORD = "gbifpassword";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_FORMAT = "format";
-    private static final String KEY_ROTATEMATRIX = "rotatematrix";
-    private static final String KEY_BINSCALE = "binscale";
-    private static final String KEY_BINPERIOD = "binperiod";
-    private static final String KEY_GRIDSCALE = "gridscale";
-    private static final String KEY_GRIDPERIOD = "gridperiod";
+    private static final String KEY_BINDOMAIN = "bindomain";
+    private static final String KEY_BINRANGE = "binrange";
+    private static final String KEY_GRIDDOMAIN = "griddomain";
+    private static final String KEY_GRIDRANGE = "gridrange";
     private static final String KEY_CACHEDOWNLOADS = "cachedownloads";
     private static final String KEY_REQUIRECOORDINATES = "requirecoordinates";
     private static final String KEY_REQUIRESPECIES = "requirespecies";
@@ -154,11 +156,7 @@ public class GbifConfiguration {
         return new Boolean(getProperty(KEY_REQUIREDATE, "true"));
     }
 
-    public static Boolean rotateMatrix() {
-        return new Boolean(getProperty(KEY_ROTATEMATRIX, "false"));
-    }
-
-    public static Set<String> getCountryFilter() {
+   public static Set<String> getCountryFilter() {
         Set<String> filter = null;
         String s = getProperty(KEY_COUNTRYFILTER);
         if (s != null && s.length() > 0) {
@@ -175,52 +173,65 @@ public class GbifConfiguration {
      *
      * @return
      */
-    public static OccurrenceMatrix<OccurrenceBin,Occurrence> getOccurrenceBinMatrix() {
-        Double binScale = new Double(getProperty(KEY_BINSCALE, "0.01"));
-        MatrixDimensions dimensions = new MatrixDimensions()
-                .addDimension(new LatitudeSelector(binScale))
-                .addDimension(new LongitudeSelector(binScale))
-                .addDimension(new DateSelector());
+    public static MultidimensionMatrix getOccurrenceBinMatrix() {
+        MatrixDimensions domainDimensions = new MatrixDimensions();
+        addDimensions(domainDimensions, getProperty(KEY_BINDOMAIN, "0.01&DAY"));
+        MatrixDimensions rangeDimensions = new MatrixDimensions();
+        addDimensions(rangeDimensions, getProperty(KEY_BINRANGE, "SPECIES"));
         
-        return new OccurrenceMatrix<OccurrenceBin,Occurrence>(dimensions, new OccurrenceBinFactory());
+        return new MultidimensionMatrix(domainDimensions, rangeDimensions);
     }
 
     
-    public static OccurrenceMatrix<GridCell,OccurrenceBin> getGridMatrix() {
-        MatrixDimensions dimensions = new MatrixDimensions();
+    public static MultidimensionMatrix getGridMatrix() {
+        MatrixDimensions domainDimensions = new MatrixDimensions();
+        addDimensions(domainDimensions, getProperty(KEY_GRIDDOMAIN, "1.0"));
+        MatrixDimensions rangeDimensions = new MatrixDimensions();
+        addDimensions(rangeDimensions, getProperty(KEY_GRIDRANGE, "SPECIES"));
         
-        addDimensions(dimensions, getProperty(KEY_GRIDSCALE, "10"));
-        addDimensions(dimensions, getProperty(KEY_GRIDPERIOD, "ALLTIME"));
-
-        return new OccurrenceMatrix<GridCell,OccurrenceBin>(dimensions, new GridCellFactory());
+        return new MultidimensionMatrix(domainDimensions, rangeDimensions);
     }
     
-    public static void addDimensions(MatrixDimensions dimensions, String key) {
-        switch (key) {
-            case "COUNTRY":
-                dimensions.addDimension(new CountrySelector());
-                break;
-            case "MONTH":
-                dimensions.addDimension(new MonthSelector());
-                break;
-            case "JULIANWEEK":
-                dimensions.addDimension(new JulianWeekSelector());
-                break;
-            case "JULIANDAY":
-                dimensions.addDimension(new JulianDaySelector());
-                break;
-            case "ALLTIME":
-                // Do nothing
-                break;
-            default:
-                if (key.indexOf("-") > 0) {
-                    dimensions.addDimension(new MultiPeriodSelector(key));
-                } else {
-                    Double gridScale = new Double(key);
-                    dimensions.addDimension(new LatitudeSelector(gridScale))
-                              .addDimension(new LongitudeSelector(gridScale));
-                }
-                break;
+    public static void addDimensions(MatrixDimensions dimensions, String keyString) {
+        String[] keys = keyString.split("&");
+        for (int i = 0; i < keys.length; i++) {
+            switch (keys[i]) {
+                case "COUNTRY":
+                    dimensions.addDimension(new CountrySelector());
+                    break;
+                case "DATE":
+                case "DAY":
+                    dimensions.addDimension(new DateSelector());
+                    break;
+                case "MONTH":
+                    dimensions.addDimension(new MonthSelector());
+                    break;
+                case "JULIANWEEK":
+                    dimensions.addDimension(new JulianWeekSelector());
+                    break;
+                case "JULIANDAY":
+                    dimensions.addDimension(new JulianDaySelector());
+                    break;
+                case "ALLTIME":
+                    // Do nothing
+                    break;
+                case "SPECIES":
+                case "TAXON":
+                    dimensions.addDimension(new SpeciesSelector());
+                    break;
+                case "LATITUDE":
+                    dimensions.addDimension(new LatitudeSelector(1.0));
+                    break;
+                default:
+                    if (keys[i].indexOf("-") > 0) {
+                        dimensions.addDimension(new MultiPeriodSelector(keys[i]));
+                    } else {
+                        Double gridScale = new Double(keys[i]);
+                        dimensions.addDimension(new LatitudeSelector(gridScale))
+                                  .addDimension(new LongitudeSelector(gridScale));
+                    }
+                    break;
+            }
         }
     }
 }

@@ -5,7 +5,7 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
-import java.text.DecimalFormat;
+import io.github.dhobern.gbifclient.matrix.Item;
 
 /**
  *
@@ -13,6 +13,10 @@ import java.text.DecimalFormat;
  */
 public class LongitudeSelector extends CoordinateSelector {
     
+    private static String[] requiredElements = {
+        Occurrence.DECIMALLONGITUDE
+    };
+
     public LongitudeSelector(int limit, double scale) {
         super(180, scale);
     }
@@ -22,11 +26,15 @@ public class LongitudeSelector extends CoordinateSelector {
     }
     
     @Override
-    public int getCategory(Mappable bin) {
-        return getCategory(bin.getDecimalLongitude());
+    public int getCategory(Item item) {
+        return getCategory(new Double(item.get(Occurrence.DECIMALLATITUDE)));
     }
     
     public String getName() {
         return "longitudeRange";
+    }
+
+    public String[] getRequiredElements() {
+        return requiredElements;
     }
 }

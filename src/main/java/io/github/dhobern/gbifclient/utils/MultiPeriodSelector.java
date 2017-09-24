@@ -5,13 +5,16 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
-import java.time.LocalDate;
+import io.github.dhobern.gbifclient.matrix.CategorySelector;
+import io.github.dhobern.gbifclient.matrix.Item;
 
 /**
  *
  * @author Platyptilia
  */
 public class MultiPeriodSelector implements CategorySelector {
+    
+    private static String[] requiredElements = { Occurrence.YEAR };
     
     private String[] categoryStrings;
     
@@ -38,16 +41,13 @@ public class MultiPeriodSelector implements CategorySelector {
     }
 
     @Override
-    public int getCategory(Mappable bin) {
+    public int getCategory(Item item) {
         int category = -1;
         
-        LocalDate date = bin.getDate();
-        if (date != null) {
-            int year = date.getYear();
-            for (int i = 0; category < 0 && i < boundaryYears.length; i++) {
-                if (year >= boundaryYears[i][0] && year <= boundaryYears[i][1]) {
-                    category = i;
-                }
+        int year = new Integer(item.get(Occurrence.YEAR));
+        for (int i = 0; category < 0 && i < boundaryYears.length; i++) {
+            if (year >= boundaryYears[i][0] && year <= boundaryYears[i][1]) {
+                category = i;
             }
         }
     
@@ -61,5 +61,9 @@ public class MultiPeriodSelector implements CategorySelector {
     
     public String getName() {
         return "timePeriod";
+    }
+
+    public String[] getRequiredElements() {
+        return requiredElements;
     }
 }

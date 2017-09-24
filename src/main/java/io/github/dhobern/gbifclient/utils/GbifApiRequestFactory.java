@@ -166,7 +166,7 @@ public class GbifApiRequestFactory {
     
     public static HttpUriRequest createSpeciesMatch(String n) {
         return new HttpGet(
-                new StringBuilder(SPECIES_MATCH_URL_BASE).append(n.replace(" ", "+ ")).toString());
+                new StringBuilder(SPECIES_MATCH_URL_BASE).append(n.replace(" ", "+")).toString());
     }
 
     public static HttpResponse executeSpeciesMatch(String n) throws IOException {

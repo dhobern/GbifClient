@@ -5,6 +5,8 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
+import io.github.dhobern.gbifclient.matrix.CategorySelector;
+import io.github.dhobern.gbifclient.matrix.Item;
 import java.time.LocalDate;
 
 /**
@@ -12,6 +14,8 @@ import java.time.LocalDate;
  * @author Platyptilia
  */
 public class MonthSelector implements CategorySelector {
+    
+    private static String[] requiredElements = { Occurrence.MONTH };
     
     private final static String[] categoryLabels = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
 
@@ -24,12 +28,8 @@ public class MonthSelector implements CategorySelector {
     }
 
     @Override
-    public int getCategory(Mappable bin) {
-        int category = -1;
-        LocalDate date = bin.getDate();
-        if (date != null) {
-            category = date.getMonthValue() - 1;
-        }
+    public int getCategory(Item item) {
+        int category = new Integer(item.get(Occurrence.MONTH)).intValue() - 1;
         return category;
     }
 
@@ -40,5 +40,9 @@ public class MonthSelector implements CategorySelector {
     
     public String getName() {
         return "month";
+    }
+
+    public String[] getRequiredElements() {
+        return requiredElements;
     }
 }

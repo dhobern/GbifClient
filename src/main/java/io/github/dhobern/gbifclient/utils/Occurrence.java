@@ -5,6 +5,7 @@
  */
 package io.github.dhobern.gbifclient.utils;
 
+import io.github.dhobern.gbifclient.matrix.Item;
 import java.time.LocalDate;
 import java.util.HashMap;
 
@@ -12,7 +13,7 @@ import java.util.HashMap;
  *
  * @author Platyptilia
  */
-public class Occurrence implements Mappable {
+public class Occurrence extends Item {
     
     public static final String SCIENTIFICNAME = "scientificname";
     public static final String TAXONRANK = "taxonrank";
@@ -59,7 +60,7 @@ public class Occurrence implements Mappable {
         return values;
     }
     
-    private String getValue(String key) {
+    public String get(String key) {
         String value = "";
         
         Integer i = columns.get(key);
@@ -71,19 +72,19 @@ public class Occurrence implements Mappable {
     }
 
     public String getScientificName() {
-        return getValue(SCIENTIFICNAME);
+        return get(SCIENTIFICNAME);
     }
 
     public String getTaxonRank() {
-        return getValue(TAXONRANK);
+        return get(TAXONRANK);
     }
 
     public String getCountryCode() {
-        return getValue(COUNTRYCODE);
+        return get(COUNTRYCODE);
     }
 
     public Double getDecimalLatitude() {
-        String latitude = getValue(DECIMALLATITUDE); 
+        String latitude = get(DECIMALLATITUDE); 
         Double l = null;
         if(latitude != null && latitude.length() > 0) {
             l = new Double(latitude);
@@ -92,7 +93,7 @@ public class Occurrence implements Mappable {
     }
 
     public Double getDecimalLongitude() {
-        String longitude = getValue(DECIMALLONGITUDE); 
+        String longitude = get(DECIMALLONGITUDE); 
         Double l = null;
         if(longitude != null && longitude.length() > 0) {
             l = new Double(longitude);
@@ -117,31 +118,31 @@ public class Occurrence implements Mappable {
     }
 
     public String getCoordinateUncertainty() {
-        return getValue(COORDINATEUNCERTAINTY);
+        return get(COORDINATEUNCERTAINTY);
     }
 
     public String getYear() {
-        return getValue(YEAR);
+        return get(YEAR);
     }
 
     public String getMonth() {
-        return getValue(MONTH);
+        return get(MONTH);
     }
     
     public String getDay() {
-        return getValue(DAY);
+        return get(DAY);
     }
     
     public String getTaxonKey() {
-        return getValue(TAXONKEY);
+        return get(TAXONKEY);
     }
     
     public String getSpeciesKey() {
-        return getValue(SPECIESKEY);
+        return get(SPECIESKEY);
     }
     
     public String getNamedCategory(String category) {
-        return getValue(category);
+        return get(category);
     }
     
     public int getCount() {

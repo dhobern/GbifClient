@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package io.github.dhobern.gbifclient.utils;
+package io.github.dhobern.gbifclient.matrix;
 
 /**
  *
@@ -24,9 +24,11 @@ public interface CategorySelector {
      */
     public int getCategoryCount();
     
-    public int getCategory(Mappable bin);
+    public int getCategory(Item item);
     
     public String getCategoryLabel(int index);
     
     public String getName();
+
+    public String[] getRequiredElements();
 }

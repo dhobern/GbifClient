@@ -5,16 +5,18 @@
  */
 package io.github.dhobern.gbifclient;
 
+import io.github.dhobern.gbifclient.matrix.Item;
+import io.github.dhobern.gbifclient.matrix.MatrixView;
+import io.github.dhobern.gbifclient.matrix.MultidimensionMatrix;
+import io.github.dhobern.gbifclient.matrix.Row;
 import io.github.dhobern.gbifclient.utils.GbifApiRequestFactory;
 import io.github.dhobern.gbifclient.utils.GbifConfiguration;
-import io.github.dhobern.gbifclient.utils.GridCell;
 import io.github.dhobern.gbifclient.utils.Occurrence;
-import io.github.dhobern.gbifclient.utils.OccurrenceBin;
-import io.github.dhobern.gbifclient.utils.OccurrenceMatrix;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -55,13 +57,28 @@ public class GbifClient {
 
                     HttpEntity entity = response.getEntity();
                     if (entity != null) {
-                        OccurrenceMatrix<OccurrenceBin,Occurrence> binMatrix = extractOccurrenceBins(entity.getContent());
+                        MultidimensionMatrix gridMatrix = GbifConfiguration.getGridMatrix();
+                        MultidimensionMatrix binMatrix = GbifConfiguration.getOccurrenceBinMatrix();
+                        
+                        binMatrix.addRequirements(gridMatrix);
 
-                        OccurrenceMatrix<GridCell,OccurrenceBin> gridMatrix = gridOccurrenceBins(binMatrix);
+                        extractOccurrenceBins(binMatrix, entity.getContent());
 
-                        gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + "-Ranked.txt", OccurrenceMatrix.FORMAT_RANKORDER);
+                        MatrixView view = new MatrixView(binMatrix);
+                        PrintWriter writer = new PrintWriter("BinExport-" + scientificName.replace(" ", "_") + ".txt", "UTF-8");
+                        view.outputMatrix(writer);
+                        writer.close();
+
+                        gridOccurrenceBins(gridMatrix, binMatrix);
+
+                        view = new MatrixView(gridMatrix);
+                        writer = new PrintWriter("GridExport-" + scientificName.replace(" ", "_") + ".txt", "UTF-8");
+                        view.outputMatrix(writer);
+                        writer.close();
+
+/*                        gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + "-Ranked.txt", OccurrenceMatrix.FORMAT_RANKORDER);
                         gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + "-Occupancy.txt", OccurrenceMatrix.FORMAT_OCCUPANCY);
-                    }
+*/                    }
                 }
             }
         } catch (IOException ex) {
@@ -69,9 +86,7 @@ public class GbifClient {
         }
     }
     
-    private static OccurrenceMatrix<OccurrenceBin,Occurrence> extractOccurrenceBins(InputStream inputStream) {
-        OccurrenceMatrix<OccurrenceBin,Occurrence> binMatrix = GbifConfiguration.getOccurrenceBinMatrix();
-
+    private static void extractOccurrenceBins(MultidimensionMatrix binMatrix, InputStream inputStream) {
         try {
             ZipInputStream zipStream = new ZipInputStream(inputStream);
             ZipEntry  zipEntry = zipStream.getNextEntry();
@@ -109,23 +124,16 @@ public class GbifClient {
         } catch (IOException ex) {
             Logger.getLogger(GbifClient.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-        /*
-        exportBins(binMatrix);
-        */
-        
-        return binMatrix;
     }
     
-    private static OccurrenceMatrix<GridCell,OccurrenceBin> gridOccurrenceBins(OccurrenceMatrix<OccurrenceBin,Occurrence> binMatrix) {
-        OccurrenceMatrix<GridCell,OccurrenceBin> gridMatrix = GbifConfiguration.getGridMatrix();
-
-        Iterator<OccurrenceBin> iterator = binMatrix.getIterator();
-        while (iterator.hasNext()) {
-            OccurrenceBin bin = iterator.next();
-            gridMatrix.insert(bin);
+    private static void gridOccurrenceBins(MultidimensionMatrix gridMatrix, MultidimensionMatrix binMatrix) {
+        Iterator<Row> rows = binMatrix.rowIterator();
+        while (rows.hasNext()) {
+            Iterator<Item> columns = rows.next().columnIterator();
+            while (columns.hasNext()) {
+                Item item = columns.next();
+                gridMatrix.insert(item);
+            }
         }
-        
-        return gridMatrix;
     }
 }
