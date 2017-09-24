@@ -19,11 +19,17 @@ public abstract class CoordinateSelector implements CategorySelector {
     private double gridScale;
     private int count;
     private DecimalFormat decimalFormat;
+    boolean reverse = false;
     
     private CoordinateSelector() {
     }
 
     public CoordinateSelector(int limit, double scale) {
+        this(limit, scale, false);
+    }
+    
+    public CoordinateSelector(int limit, double scale, boolean r) {
+        reverse = r;
         coordinateLimit = limit;
         gridScale = scale;
         
@@ -40,6 +46,9 @@ public abstract class CoordinateSelector implements CategorySelector {
     public abstract int getCategory(Item item);
 
     public int getCategory(double value) {
+        if (reverse) {
+            value = -value;
+        }
         return new Double(Math.floor((value + coordinateLimit) / gridScale)).intValue();
     }
 
@@ -47,6 +56,10 @@ public abstract class CoordinateSelector implements CategorySelector {
     public String getCategoryLabel(int index) {
         Double lower = (gridScale * index) - coordinateLimit;
         Double upper = lower + gridScale; 
+        if (reverse) {
+            upper = -upper;
+            lower = -lower;
+        }
         return decimalFormat.format(lower) + "," + decimalFormat.format(upper);
     }
     

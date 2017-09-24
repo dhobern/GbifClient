@@ -27,7 +27,7 @@ public class LongitudeSelector extends CoordinateSelector {
     
     @Override
     public int getCategory(Item item) {
-        return getCategory(new Double(item.get(Occurrence.DECIMALLATITUDE)));
+        return getCategory(new Double(item.get(Occurrence.DECIMALLONGITUDE)));
     }
     
     public String getName() {

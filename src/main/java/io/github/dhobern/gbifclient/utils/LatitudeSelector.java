@@ -18,7 +18,7 @@ public class LatitudeSelector extends CoordinateSelector {
     };
 
     public LatitudeSelector(int limit, double scale) {
-        super(90, scale);
+        super(90, scale, true);
     }
     
     public LatitudeSelector(double scale) {

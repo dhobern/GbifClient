@@ -222,6 +222,9 @@ public class GbifConfiguration {
                 case "LATITUDE":
                     dimensions.addDimension(new LatitudeSelector(1.0));
                     break;
+                case "LONGITUDE":
+                    dimensions.addDimension(new LongitudeSelector(1.0));
+                    break;
                 default:
                     if (keys[i].indexOf("-") > 0) {
                         dimensions.addDimension(new MultiPeriodSelector(keys[i]));
