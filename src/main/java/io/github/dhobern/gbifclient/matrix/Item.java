@@ -60,7 +60,7 @@ public class Item {
     }
     
     public void add(Item other) {
-        this.count += other.getCount();
+        this.count++;
         this.total += other.getTotal();
     }
 
