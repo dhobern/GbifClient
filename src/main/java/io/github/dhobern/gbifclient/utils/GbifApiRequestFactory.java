@@ -165,21 +165,25 @@ public class GbifApiRequestFactory {
     }
     
     public static HttpUriRequest createSpeciesMatch(String n) {
-        return new HttpGet(
-                new StringBuilder(SPECIES_MATCH_URL_BASE).append(n.replace(" ", "+")).toString());
+        StringBuilder sb = new StringBuilder(SPECIES_MATCH_URL_BASE).append(n.replace(" ", "+"));
+        return new HttpGet(sb.toString());
     }
 
     public static HttpResponse executeSpeciesMatch(String n) throws IOException {
         return getHttpClient().execute(createSpeciesMatch(n));
     }
     
-    public static HttpUriRequest createListDownloads() {
-        return new HttpGet(
-                new StringBuilder(LIST_DOWNLOADS_URL_BASE).append(GbifConfiguration.getGbifUser()).toString());
+    public static HttpUriRequest createListDownloads(int page) {
+        StringBuilder sb = new StringBuilder(LIST_DOWNLOADS_URL_BASE).append(GbifConfiguration.getGbifUser());
+        sb.append("?limit=20");
+        if (page > 0) {
+            sb.append("&offset=" + (page * 20));
+        }
+        return new HttpGet(sb.toString());
     }
 
-    public static HttpResponse executeListDownloads() throws IOException {
-        return getHttpClient().execute(createListDownloads());
+    public static HttpResponse executeListDownloads(int page) throws IOException {
+        return getHttpClient().execute(createListDownloads(page));
     }
     
     public static JSONObject readJsonEntity(HttpResponse response) throws JSONException {
@@ -279,23 +283,32 @@ public class GbifApiRequestFactory {
             ZonedDateTime threshold = ZonedDateTime.now().minusDays(cacheDownloads);
             
             try {
-                JSONObject object = readJsonEntity(executeListDownloads());
-                JSONArray array = object.getJSONArray("results");
-                JSONObject thisRequest = new JSONObject(jsonRequest);
-                if (array != null) {
-                    for (int i = 0; downloadKey == null && i < array.length(); i++) {
-                        JSONObject d = array.getJSONObject(i);
-                        JSONObject request = d.getJSONObject("request");
-                        String status = d.getString("status");
-                        ZonedDateTime timestamp = ZonedDateTime.parse(d.getString("created"),DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("Europe/Berlin")));
-                        if (    JsonUtils.objectsMatch(request, thisRequest, true)
-                             && timestamp.isAfter(threshold)
-                             && (    status.equals("SUCCEEDED")
-                                  || status.equals("PREPARING")
-                                  || status.equals("RUNNING"))) {
-                            downloadKey = d.getString("key");
-                        }
-                    }                   
+                int page = 0;
+                boolean moreDownloads = true;
+                while (downloadKey == null && moreDownloads) {
+                    JSONObject object = readJsonEntity(executeListDownloads(page++));
+                    JSONArray array = object.getJSONArray("results");
+                    JSONObject thisRequest = new JSONObject(jsonRequest);
+                    if (array != null) {
+                        for (int i = 0; downloadKey == null && i < array.length(); i++) {
+                            JSONObject d = array.getJSONObject(i);
+                            JSONObject request = d.getJSONObject("request");
+                            String status = d.getString("status");
+                            ZonedDateTime timestamp = ZonedDateTime.parse(d.getString("created"),DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("Europe/Berlin")));
+                            if (timestamp.isAfter(threshold)) {
+                                if (    JsonUtils.objectsMatch(request, thisRequest, true)
+                                     && (    status.equals("SUCCEEDED")
+                                          || status.equals("PREPARING")
+                                          || status.equals("RUNNING"))) {
+                                    downloadKey = d.getString("key");
+                                }
+                            } else {
+                                moreDownloads = false;
+                            }
+                        }                   
+                    } else {
+                        moreDownloads = false;
+                    }
                 }
             } catch (Exception ex) {
                 Logger.getLogger(GbifApiRequestFactory.class.getName()).log(Level.SEVERE, null, ex);

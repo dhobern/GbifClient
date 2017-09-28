@@ -52,7 +52,6 @@ public class GbifClient {
                     System.err.println("Unrecognised scientific name: " + scientificName);
                 } else {
                     HttpResponse response 
-
                             = GbifApiRequestFactory.executeDownloadRequestWait("TAXON_KEY", taxonKey);
 
                     HttpEntity entity = response.getEntity();
@@ -64,21 +63,20 @@ public class GbifClient {
 
                         extractOccurrenceBins(binMatrix, entity.getContent());
 
+                        /*
                         MatrixView view = new MatrixView(binMatrix);
                         PrintWriter writer = new PrintWriter("BinExport-" + scientificName.replace(" ", "_") + ".txt", "UTF-8");
                         view.outputMatrix(writer);
                         writer.close();
-
+                        */
+                        
                         gridOccurrenceBins(gridMatrix, binMatrix);
 
-                        view = new MatrixView(gridMatrix);
-                        writer = new PrintWriter("GridExport-" + scientificName.replace(" ", "_") + ".txt", "UTF-8");
+                        MatrixView view = new MatrixView(gridMatrix);
+                        PrintWriter writer = new PrintWriter("GridExport-" + scientificName.replace(" ", "_") + ".txt", "UTF-8");
                         view.outputMatrix(writer);
                         writer.close();
-
-/*                        gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + "-Ranked.txt", OccurrenceMatrix.FORMAT_RANKORDER);
-                        gridMatrix.exportGrid("GridExport-" + scientificName.replace(" ", "_") + "-Occupancy.txt", OccurrenceMatrix.FORMAT_OCCUPANCY);
-*/                    }
+                    }
                 }
             }
         } catch (IOException ex) {

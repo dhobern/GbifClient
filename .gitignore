@@ -1,4 +1,5 @@
 /target/
 *.txt
+*.xlsx
 /src/main/resources/gbifclient-local.cfg
 /src/main/resources/gbifclient-runtime.cfg

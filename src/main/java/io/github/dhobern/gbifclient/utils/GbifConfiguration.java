@@ -195,13 +195,19 @@ public class GbifConfiguration {
     public static void addDimensions(MatrixDimensions dimensions, String keyString) {
         String[] keys = keyString.split("&");
         for (int i = 0; i < keys.length; i++) {
-            switch (keys[i]) {
+            String[] parts = keys[i].split(":");
+            String key = parts[0];
+            
+            switch (key) {
                 case "COUNTRY":
                     dimensions.addDimension(new CountrySelector());
                     break;
                 case "DATE":
                 case "DAY":
                     dimensions.addDimension(new DateSelector());
+                    break;
+                case "YEAR":
+                    dimensions.addDimension(new YearSelector());
                     break;
                 case "MONTH":
                     dimensions.addDimension(new MonthSelector());
@@ -220,16 +226,24 @@ public class GbifConfiguration {
                     dimensions.addDimension(new SpeciesSelector());
                     break;
                 case "LATITUDE":
-                    dimensions.addDimension(new LatitudeSelector(1.0));
+                    Double latScale = 1.0;
+                    if (parts.length > 1) {
+                        latScale = new Double(parts[1]);
+                    }
+                    dimensions.addDimension(new LatitudeSelector(latScale));
                     break;
                 case "LONGITUDE":
-                    dimensions.addDimension(new LongitudeSelector(1.0));
+                    Double lonScale = 1.0;
+                    if (parts.length > 1) {
+                        lonScale = new Double(parts[1]);
+                    }
+                    dimensions.addDimension(new LongitudeSelector(lonScale));
                     break;
                 default:
-                    if (keys[i].indexOf("-") > 0) {
-                        dimensions.addDimension(new MultiPeriodSelector(keys[i]));
+                    if (key.indexOf("-") > 0) {
+                        dimensions.addDimension(new MultiPeriodSelector(key));
                     } else {
-                        Double gridScale = new Double(keys[i]);
+                        Double gridScale = new Double(key);
                         dimensions.addDimension(new LatitudeSelector(gridScale))
                                   .addDimension(new LongitudeSelector(gridScale));
                     }

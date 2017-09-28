@@ -32,7 +32,7 @@ public class Item {
         values = new String[elements.length];
         
         for (int i = 0; i < elements.length; i++) {
-            values[i] = other.get(elements[i]);
+            values[i] = other.get(elements[i]).intern();
         }
         
         count = other.getCount();

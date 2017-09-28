@@ -60,8 +60,8 @@ public class MultidimensionMatrix {
     }
 
     public Item insert(Item item) {
-        String rowKey = domainDimensions.lock(domainDimensions.getCellPosition(item));
-        String columnKey = rangeDimensions.lock(rangeDimensions.getCellPosition(item));
+        String rowKey = domainDimensions.lock(domainDimensions.getCellPosition(item)).intern();
+        String columnKey = rangeDimensions.lock(rangeDimensions.getCellPosition(item)).intern();
         
         Row row = matrix.get(rowKey);
         
